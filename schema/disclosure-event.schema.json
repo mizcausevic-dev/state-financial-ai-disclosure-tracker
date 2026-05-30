@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/mizcausevic-dev/state-financial-ai-disclosure-tracker/blob/main/schema/disclosure-event.schema.json",
+  "title": "State Financial Services AI Disclosure Lifecycle Event",
+  "description": "A timestamped lifecycle event in a US state's evolving financial-services AI regulation — typically a state banking-regulator regulation, a state-AG enforcement guidance, a state legislative statute applicable to financial services, or NMLS-coordinated state requirements. Tracks the per-state regulatory pipeline so banks + credit unions + fintechs + neobanks + payment platforms + robo-advisors can publish Decision Cards that reference the right state regulatory set on any given account-opening / credit-decision / payment-authorization date.",
+  "type": "object",
+  "required": ["event_id", "state", "timestamp", "lifecycle_state", "citation"],
+  "additionalProperties": false,
+  "properties": {
+    "event_id":         {"type": "string", "minLength": 1},
+    "state":            {"type": "string", "pattern": "^US-[A-Z]{2}$"},
+    "timestamp":        {"type": "string", "format": "date-time"},
+    "lifecycle_state": {
+      "type": "string",
+      "enum": [
+        "proposed",
+        "in-comment-period",
+        "adopted-regulation",
+        "enacted-awaiting-effective",
+        "effective",
+        "amended",
+        "superseded",
+        "sunset",
+        "withdrawn"
+      ]
+    },
+    "regulatory_vehicle": {
+      "type": "string",
+      "enum": [
+        "state-banking-regulator-regulation",
+        "state-banking-regulator-guidance",
+        "state-ag-enforcement-guidance",
+        "state-legislative-statute",
+        "nmls-coordinated-requirement",
+        "state-doi-cross-applicable"
+      ]
+    },
+    "citation": {
+      "type": "object",
+      "required": ["short_label", "jurisdictional_uri"],
+      "additionalProperties": false,
+      "properties": {
+        "short_label":          {"type": "string"},
+        "long_title":           {"type": "string"},
+        "jurisdictional_uri":   {"type": "string", "format": "uri"},
+        "session_year":         {"type": "integer", "minimum": 1900, "maximum": 2100}
+      }
+    },
+    "effective_date":   {"type": "string", "format": "date"},
+    "sunset_date":      {"type": "string", "format": "date"},
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "covered_decisions": {
+          "type": "array",
+          "items": {"type": "string", "enum": [
+            "consumer-credit-underwriting",
+            "consumer-credit-line-management",
+            "deposit-account-opening",
+            "payment-authorization",
+            "fraud-detection",
+            "aml-bsa-kyc",
+            "robo-advisor-recommendation",
+            "small-business-lending",
+            "debt-collection",
+            "credit-monitoring-marketing"
+          ]}
+        },
+        "covered_actors": {
+          "type": "array",
+          "items": {"type": "string", "enum": [
+            "state-chartered-bank",
+            "national-bank",
+            "state-credit-union",
+            "federal-credit-union",
+            "money-transmitter",
+            "consumer-finance-company",
+            "small-loan-licensee",
+            "ind-mortgage-loan-originator",
+            "investment-adviser-state-registered",
+            "broker-dealer",
+            "fintech-bsa-program",
+            "neobank-via-sponsor-bank",
+            "earned-wage-access-provider",
+            "buy-now-pay-later-provider",
+            "ai-vendor"
+          ]}
+        },
+        "minimum_asset_size": {"type": "integer", "minimum": 0},
+        "covered_geographic_scope": {"type": "string"}
+      }
+    },
+    "obligation_kinds": {
+      "type": "array",
+      "items": {"type": "string", "enum": [
+        "ai-system-inventory-required",
+        "written-ai-governance-program-required",
+        "model-risk-management-framework-required",
+        "third-party-ai-due-diligence-required",
+        "unfair-discrimination-testing-required",
+        "annual-bias-report-required",
+        "consumer-notice-required",
+        "right-to-human-review-required",
+        "right-to-explanation-required",
+        "adverse-action-notice-state-overlay-required",
+        "model-validation-evidence-required",
+        "vendor-contract-clause-required",
+        "state-regulator-notification-required",
+        "ai-cybersecurity-policy-required",
+        "external-third-party-audit-required",
+        "data-residency-restriction"
+      ]}
+    },
+    "regulator": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "primary_agency_code": {"type": "string", "description": "e.g. 'NY-DFS', 'CA-DFPI', 'TX-DOB', 'IL-IDFPR', 'MA-DOB', 'WA-DFI'"},
+        "primary_agency_name": {"type": "string"},
+        "primary_agency_uri":  {"type": "string", "format": "uri"},
+        "concurrent_jurisdiction":{"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "supersedes_event_id":    {"type": "string"},
+    "notes":                  {"type": "string"}
+  },
+  "allOf": [
+    {"if": {"properties": {"lifecycle_state": {"const": "effective"}}},  "then": {"required": ["effective_date"]}},
+    {"if": {"properties": {"lifecycle_state": {"const": "sunset"}}},     "then": {"required": ["sunset_date"]}},
+    {"if": {"properties": {"lifecycle_state": {"enum": ["superseded", "amended"]}}}, "then": {"required": ["supersedes_event_id"]}}
+  ]
+}
